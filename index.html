@@ -81,7 +81,7 @@
         orderBy,
         deleteDoc,
         doc,
-        where
+        where,
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -178,7 +178,7 @@
                         </button>
                     </div>
                     
-                    <div class="post-comments" id="post-comments-${id}" data-comments="${id}">
+                    <div class="post-comments post-comments-${id}" id="post-comments-${id}" data-comments="${id}">
                     </div>
             </article>
         `;
@@ -250,12 +250,12 @@
         }
 
 
-        const commentBox = document.getElementById(`post-comments-${postId}`);
+        const commentBox = document.getElementsByClassName(`post-comments-${postId}`);
         const commentCountEl = document.getElementById(`comment-count-${postId}`);
 
-        if (!commentBox) return;
+        if (!commentBox || commentBox.length === 0) return;
 
-        commentBox.innerHTML = `<div class="spinner"></div>`;
+        commentBox[0].innerHTML = `<div class="spinner"></div>`;
 
         try {
             const q = query(
@@ -265,7 +265,8 @@
 
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
-                commentBox.innerHTML = `
+                console.log("No comments found for postId:", postId);
+                commentBox[0].innerHTML = `
                     <div class="comment-form">
                         <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
                         <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
@@ -279,19 +280,20 @@
                 commentCountEl.textContent = snapshot.size;
             }
 
-            let html = "";
+            if (snapshot.size > 0) {
+                let html = "";
 
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                html += `
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    html += `
                 <div class="comment">
                     <span class="comment-author">${data.author || "Anonymous"}</span>
                     <span class="comment-text">${data.text}</span>
                 </div>
             `;
-            });
+                });
 
-            html += `
+                html += `
                 <div class="comment-form">
                     <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
                     <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
@@ -299,11 +301,11 @@
                     </button>
                 </div>`;
 
-            commentBox.innerHTML = html;
-
+                commentBox[0].innerHTML = html;
+            }
         } catch (error) {
             console.error("Error loading comments:", error);
-            commentBox.innerHTML = "<p>Error loading comments.</p>";
+            commentBox[0].innerHTML = "<p>Error loading comments.</p>";
         }
     }
 
