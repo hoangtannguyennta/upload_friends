@@ -174,7 +174,7 @@
                         </button>
                         <button class="action-btn btn-comments" data-id="${id}">
                             <i class="fas fa-comment"></i>
-                            <span id="comment-count-${id}">0</span>
+                            <span class="comment-count-${id}">0</span>
                         </button>
                     </div>
                     
@@ -251,7 +251,7 @@
 
 
         const commentBox = document.getElementsByClassName(`post-comments-${postId}`);
-        const commentCountEl = document.getElementById(`comment-count-${postId}`);
+        const commentCountEl = document.getElementsByClassName(`comment-count-${postId}`);
 
         if (!commentBox || commentBox.length === 0) return;
 
@@ -276,8 +276,8 @@
                 return;
             }
 
-            if (commentCountEl) {
-                commentCountEl.textContent = snapshot.size;
+            if (commentCountEl && commentCountEl.length > 0) {
+                commentCountEl[0].textContent = snapshot.size;
             }
 
             if (snapshot.size > 0) {
