@@ -246,11 +246,11 @@
     window.addComment = addComment;
 
     async function loadComments(postId) {
+
         if (!postId) {
             console.error("postId is undefined!");
             return;
         }
-
 
         const commentBox = document.getElementsByClassName(`comments-list-${postId}`);
         const commentInput = document.getElementsByClassName(`comments-order-${postId}`);
@@ -261,61 +261,89 @@
         commentBox[0].innerHTML = `<div class="spinner"></div>`;
 
         try {
+
             const q = query(
                 collection(db, "comments"),
-                where("postId", "==", postId),
+                where("postId", "==", postId)
             );
 
             const snapshot = await getDocs(q);
+
             if (snapshot.empty) {
-                console.log("No comments found for postId:", postId);
                 commentBox[0].innerHTML = `
-                    <div class="comment-form">
-                        <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
-                        <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>`;
-                return;
-            }
-
-            if (commentCountEl && commentCountEl.length > 0) {
-                const $box = $('.post-comments[data-comments="' + postId + '"]');
-                $box.slideDown(200);
-                commentCountEl[0].textContent = snapshot.size;
-            }
-
-            if (snapshot.size > 0) {
-                let html = "";
-
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    html += `
-                <div class="comment">
-                    <div class="comment-content">
-                        <span class="comment-author">${data.author || "Anonymous"}</span>
-                        <span class="comment-text">${data.text}</span>
-                    </div>
-
-                    <span class="comment-time">${new Date(data.createdAt).toLocaleString()}</span>
-                </div>
-            `;
-                });
-
-                commentBox[0].innerHTML = html;
-                commentInput[0].innerHTML = `
                 <div class="comment-form">
                     <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
                     <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>`;
+                return;
             }
+
+            // Update số lượng comment
+            if (commentCountEl && commentCountEl.length > 0) {
+                const $box = $('.post-comments[data-comments="' + postId + '"]');
+                $box.slideDown(200);
+                commentCountEl[0].textContent = snapshot.size;
+            }
+
+            let html = "";
+
+            snapshot.forEach((docSnap) => {
+
+                const data = docSnap.data();
+
+                // 🔥 Convert createdAt chuẩn
+                let timeValue = 0;
+
+                if (data.createdAt?.toMillis) {
+                    timeValue = data.createdAt.toMillis();
+                } else if (typeof data.createdAt === "number") {
+                    timeValue = data.createdAt;
+                } else {
+                    timeValue = new Date(data.createdAt).getTime();
+                }
+
+                html += `
+                <div class="comment" data-time="${timeValue}">
+                    <div class="comment-content">
+                        <span class="comment-author">${data.author || "Anonymous"}</span>
+                        <span class="comment-text">${data.text}</span>
+                    </div>
+                    <span class="comment-time">${new Date(timeValue).toLocaleString()}</span>
+                </div>
+            `;
+            });
+
+            commentBox[0].innerHTML = html;
+
+            // 🔥 SORT mới nhất lên đầu
+            sortComments(postId);
+
+            // Render form (1 lần duy nhất)
+            commentInput[0].innerHTML = `
+            <div class="comment-form">
+                <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
+                <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>`;
+
         } catch (error) {
             console.error("Error loading comments:", error);
             commentBox[0].innerHTML = "<p>Error loading comments.</p>";
         }
     }
 
+    function sortComments(postId) {
 
+        const $list = $(`.comments-list-${postId}`);
+        const $comments = $list.find(".comment");
+
+        $comments.sort(function (a, b) {
+            return $(b).data("time") - $(a).data("time");
+        });
+
+        $list.html($comments);
+    }
 </script>
