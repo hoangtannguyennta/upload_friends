@@ -82,6 +82,7 @@
         deleteDoc,
         doc,
         where,
+        serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -234,7 +235,7 @@
             postId: postId,
             text: text,
             author: document.getElementById("authorSelect").value,
-            createdAt: Date.now()
+            createdAt: serverTimestamp()
         });
 
         input.value = "";
@@ -277,6 +278,8 @@
             }
 
             if (commentCountEl && commentCountEl.length > 0) {
+                const $box = $('.post-comments[data-comments="' + postId + '"]');
+                $box.slideDown(200);
                 commentCountEl[0].textContent = snapshot.size;
             }
 
