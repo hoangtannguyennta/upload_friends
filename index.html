@@ -7,7 +7,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <title>FriendGram 📸 | Share Your Vibes</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
 </head>
 
 <body>
@@ -59,8 +60,9 @@
 </html>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <script>
-    $(document).on("click", ".action-btn", function () {
+    $(document).on("click", ".btn-comments", function () {
         var id = $(this).data("id");
 
         $('.post-comments[data-comments="' + id + '"]').slideToggle(200);
@@ -170,35 +172,17 @@
                             <i class="fas fa-heart"></i>
                             <span>4</span>
                         </button>
-                        <button class="action-btn" data-id="1">
+                        <button class="action-btn btn-comments" data-id="${id}">
                             <i class="fas fa-comment"></i>
-                            <span>2</span>
+                            <span id="comment-count-${id}">0</span>
                         </button>
                     </div>
                     
-
-                    <div class="post-comments" data-comments="1">
-                        
-                            <div class="comment">
-                                <span class="comment-author">Gô</span>
-                                <span class="comment-text"> Quán ở đâu vậy? Cho mình địa chỉ với! 😍</span>
-                            </div>
-                        
-                            <div class="comment">
-                                <span class="comment-author">Quân lỏ</span>
-                                <span class="comment-text"> Trông chill quá!</span>
-                            </div>
-                        
-
-                        <div class="comment-form"">
-                            <input type="text" id="input-${id}" class="comment-input" placeholder="Viết bình luận...">
-                            <button type="submit" class="btn-comment" onclick="addComment('${id}')">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
+                    <div class="post-comments" id="post-comments-${id}" data-comments="${id}">
                     </div>
             </article>
-      `;
+        `;
+            loadComments(id);
         });
     }
 
@@ -207,6 +191,20 @@
 
     async function deletePost(id) {
         if (!confirm("Bạn có chắc muốn xóa?")) return;
+
+        const q = query(
+            collection(db, "comments"),
+            where("postId", "==", id)
+        );
+
+        const snapshot = await getDocs(q);
+
+        const deletePromises = [];
+        snapshot.forEach((docSnap) => {
+            deletePromises.push(deleteDoc(doc(db, "comments", docSnap.id)));
+        });
+
+        await Promise.all(deletePromises);
 
         await deleteDoc(doc(db, "photos", id));
         loadData();
@@ -235,6 +233,7 @@
         await addDoc(collection(db, "comments"), {
             postId: postId,
             text: text,
+            author: document.getElementById("authorSelect").value,
             createdAt: Date.now()
         });
 
@@ -243,5 +242,70 @@
     }
 
     window.addComment = addComment;
+
+    async function loadComments(postId) {
+        if (!postId) {
+            console.error("postId is undefined!");
+            return;
+        }
+
+
+        const commentBox = document.getElementById(`post-comments-${postId}`);
+        const commentCountEl = document.getElementById(`comment-count-${postId}`);
+
+        if (!commentBox) return;
+
+        commentBox.innerHTML = `<div class="spinner"></div>`;
+
+        try {
+            const q = query(
+                collection(db, "comments"),
+                where("postId", "==", postId),
+            );
+
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+                commentBox.innerHTML = `
+                    <div class="comment-form">
+                        <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
+                        <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            if (commentCountEl) {
+                commentCountEl.textContent = snapshot.size;
+            }
+
+            let html = "";
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                html += `
+                <div class="comment">
+                    <span class="comment-author">${data.author || "Anonymous"}</span>
+                    <span class="comment-text">${data.text}</span>
+                </div>
+            `;
+            });
+
+            html += `
+                <div class="comment-form">
+                    <input type="text" id="input-${postId}" class="comment-input" placeholder="Viết bình luận...">
+                    <button type="submit" class="btn-comment" onclick="addComment('${postId}')">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>`;
+
+            commentBox.innerHTML = html;
+
+        } catch (error) {
+            console.error("Error loading comments:", error);
+            commentBox.innerHTML = "<p>Error loading comments.</p>";
+        }
+    }
+
 
 </script>
