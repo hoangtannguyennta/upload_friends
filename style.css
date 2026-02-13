@@ -338,15 +338,18 @@ button {
 /* Comments */
 .post-comments {
     display: none;
-    padding: 1rem;
     border-top: 1px solid rgba(var(--border), 0.5);
     flex-direction: column;
     gap: 0.75rem;
+}
+
+.comments-list {
     max-height: 300px;
     overflow-y: auto;
     background: #f8f9fa;
     border-radius: 10px;
     scroll-behavior: smooth;
+    padding: 15px;
 }
 
 .post-comments.show {
@@ -360,8 +363,8 @@ button {
     font-size: 0.875rem;
     background-color: var(--muted);
     padding: 0.5rem;
-    margin-bottom: 10px;
     border-radius: 12px;
+    margin-bottom: 0.5rem;
 }
 
 .comment-content {
@@ -382,8 +385,7 @@ button {
 .comment-form {
     display: flex;
     gap: 0.5rem;
-    padding-top: 0.5rem;
-    margin-top: 0.5rem;
+    padding: 0.75rem 1rem;
     border-top: 1px solid rgba(var(--border), 0.3);
 }
 
@@ -505,19 +507,19 @@ button {
     transform: scale(0.96);
 }
 
-.post-comments::-webkit-scrollbar {
+.comments-list::-webkit-scrollbar {
     width: 6px;
 }
 
-.post-comments::-webkit-scrollbar-track {
+.comments-list::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.post-comments::-webkit-scrollbar-thumb {
+.comments-list::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 10px;
 }
 
-.post-comments::-webkit-scrollbar-thumb:hover {
+.comments-list::-webkit-scrollbar-thumb:hover {
     background: #999;
 }
