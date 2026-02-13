@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhóm Bạn Thân</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-container">
+            <h1>Đăng bài viết của mình 💛</h1>
+            <div class="header-count">
+                <i class="fas fa-users"></i>
+                <span>4</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Friends avatars -->
+        <div class="friends-section" id="friendsList"></div>
+
+        <!-- New post form -->
+        <div class="new-post-form" id="newPostForm">
+            <div class="form-header">
+                <div class="friend-avatar" id="selectedAvatar">🤣</div>
+                <select id="authorSelect">
+                    <option value="🧑‍💻 Gô">🧑‍💻 Gô</option>
+                    <option value="👩‍🎨 Quân lỏ">👩‍🎨 Quân lỏ</option>
+                    <option value="🧑‍🚀 Quân lọ">🧑‍🚀 Quân lọ</option>
+                    <option value="👩‍🌾 Bia lỏ">👩‍🌾 Bia lỏ</option>
+                </select>
+            </div>
+            <textarea id="comment" placeholder="Bạn đang nghĩ gì? ✨" rows="2"></textarea>
+            <div class="form-actions">
+                <input type="file" id="imageFile" hidden>
+                <label for="imageFile" class="btn-image">
+                    <i class="fas fa-image"></i>
+                </label>
+                <button onclick="uploadAndSave()" class="btn-post">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Đăng</span>
+                </button>
+            </div>
+            <img id="preview" style="display:none; margin-top:10px; width:100%; border-radius:12px;">
+        </div>
+
+        <!-- Feed -->
+        <div class="feed" id="feed">
+        </div>
+    </main>
+</body>
+
+</html>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $(document).on("click", ".action-btn", function () {
+        var id = $(this).data("id");
+
+        $('.post-comments[data-comments="' + id + '"]').slideToggle(200);
+    });
+
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs,
+        query,
+        orderBy,
+        deleteDoc,
+        doc,
+        where
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAn6U45kKfYSWfrFhMcwIP6_N7VC9KO5FQ",
+        authDomain: "mini-photo-app-891a5.firebaseapp.com",
+        projectId: "mini-photo-app-891a5",
+        storageBucket: "mini-photo-app-891a5.firebasestorage.app",
+        messagingSenderId: "539133097244",
+        appId: "1:539133097244:web:ca8540eeee7749f77036d9",
+        measurementId: "G-H5H3C0F5MV"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function uploadAndSave() {
+        const file = document.getElementById("imageFile").files[0];
+        const comment = document.getElementById("comment").value.trim();
+        $(".btn-post").prop("disabled", true).css("opacity", "0.6");
+
+        if (!file || !comment) {
+            alert("Chọn ảnh và nhập comment!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "photo-mini");
+
+        const response = await fetch(
+            "https://api.cloudinary.com/v1_1/dsmp2jfcr/image/upload",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+        const imageUrl = data.secure_url;
+
+        await addDoc(collection(db, "photos"), {
+            imageUrl: imageUrl,
+            comment: comment,
+            auth: document.getElementById("authorSelect").value,
+            createdAt: Date.now()
+        });
+
+        $(".btn-post").prop("disabled", false).css("opacity", "1");
+        document.getElementById("imageFile").value = "";
+        document.getElementById("comment").value = "";
+        document.getElementById("preview").style.display = "none";
+
+        loadData();
+    }
+
+    async function loadData() {
+        const list = document.getElementById("feed");
+        list.innerHTML = `<div class="spinner"></div>`;
+
+        const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        list.innerHTML = "";
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const id = doc.id;
+            list.innerHTML += `
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-author-avatar">😲</div>
+                        <div class="post-author-info">
+                            <span class="post-author-name">${data.auth}</span>
+                            <span class="post-time">${new Date(data.createdAt).toLocaleString()}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deletePost('${id}')">🗑 Xoá</button>
+                    </div>
+
+                    <img src="${data.imageUrl}" alt="" class="post-image" onerror="this.style.display='none'">
+
+                    <div class="post-caption">${data.comment}</div>
+
+                    <div class="post-actions">
+                        <button class="action-btn liked" onclick="likePost('1')">
+                            <i class="fas fa-heart"></i>
+                            <span>4</span>
+                        </button>
+                        <button class="action-btn" data-id="1">
+                            <i class="fas fa-comment"></i>
+                            <span>2</span>
+                        </button>
+                    </div>
+                    
+
+                    <div class="post-comments" data-comments="1">
+                        
+                            <div class="comment">
+                                <span class="comment-author">Gô</span>
+                                <span class="comment-text"> Quán ở đâu vậy? Cho mình địa chỉ với! 😍</span>
+                            </div>
+                        
+                            <div class="comment">
+                                <span class="comment-author">Quân lỏ</span>
+                                <span class="comment-text"> Trông chill quá!</span>
+                            </div>
+                        
+
+                        <div class="comment-form"">
+                            <input type="text" id="input-${id}" class="comment-input" placeholder="Viết bình luận...">
+                            <button type="submit" class="btn-comment" onclick="addComment('${id}')">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+            </article>
+      `;
+        });
+    }
+
+    window.uploadAndSave = uploadAndSave;
+    loadData();
+
+    async function deletePost(id) {
+        if (!confirm("Bạn có chắc muốn xóa?")) return;
+
+        await deleteDoc(doc(db, "photos", id));
+        loadData();
+    }`
+
+    window.deletePost = deletePost;
+
+
+    $("#imageFile").on("change", function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                $("#preview").attr("src", event.target.result).show();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function addComment(postId) {
+        const input = document.getElementById(`input-${postId}`);
+        const text = input.value.trim();
+
+        if (!text) return;
+
+        await addDoc(collection(db, "comments"), {
+            postId: postId,
+            text: text,
+            createdAt: Date.now()
+        });
+
+        input.value = "";
+        loadComments(postId);
+    }
+
+    window.addComment = addComment;
+
+</script>
