@@ -150,10 +150,12 @@
             list.innerHTML += `
                 <article class="post-card">
                     <div class="post-header">
-                        <div class="post-author-avatar">😲</div>
-                        <div class="post-author-info">
-                            <span class="post-author-name">${data.auth}</span>
-                            <span class="post-time">${new Date(data.createdAt).toLocaleString()}</span>
+                        <div class="d-flex">
+                            <div class="post-author-avatar">😲</div>
+                            <div class="post-author-info">
+                                <span class="post-author-name">${data.auth}</span>
+                                <span class="post-time">${new Date(data.createdAt).toLocaleString()}</span>
+                            </div>
                         </div>
                         <button class="btn-delete" onclick="deletePost('${id}')">🗑 Xoá</button>
                     </div>
