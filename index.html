@@ -290,8 +290,12 @@
                     const data = docSnap.data();
                     html += `
                 <div class="comment">
-                    <span class="comment-author">${data.author || "Anonymous"}</span>
-                    <span class="comment-text">${data.text}</span>
+                    <div class="comment-content">
+                        <span class="comment-author">${data.author || "Anonymous"}</span>
+                        <span class="comment-text">${data.text}</span>
+                    </div>
+
+                    <span class="comment-time">${new Date(data.createdAt).toLocaleString()}</span>
                 </div>
             `;
                 });

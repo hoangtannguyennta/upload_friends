@@ -349,7 +349,16 @@ button {
 }
 
 .comment {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
     font-size: 0.875rem;
+}
+
+.comment-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .comment-author {
